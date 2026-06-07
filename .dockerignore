@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.github
+coverage
+*.log
+.env
+.env*.local
+README.md
+CONTRIBUTING.md
+.vscode
+.idea
+.DS_Store

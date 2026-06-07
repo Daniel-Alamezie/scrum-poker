@@ -1,0 +1,61 @@
+{
+  "name": "scrum-poker",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Real-time scrum poker for sprint refinement. Self-hosted, no database, no sign-up.",
+  "license": "MIT",
+  "author": "Daniel Alamezie",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Daniel-Alamezie/scrum-poker.git"
+  },
+  "engines": {
+    "node": ">=20.15.0"
+  },
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "next build",
+    "start": "cross-env NODE_ENV=production tsx server.ts",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky || true"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,mjs,json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "cross-env": "^7.0.3",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "postcss": "^8.4.49",
+    "prettier": "^3.4.2",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

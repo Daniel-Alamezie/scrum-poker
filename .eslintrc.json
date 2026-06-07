@@ -1,0 +1,15 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off"
+  },
+  "overrides": [
+    {
+      "files": ["*.config.ts", "*.config.js", "*.config.mjs"],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["node_modules/", ".next/", "coverage/"]
+}
