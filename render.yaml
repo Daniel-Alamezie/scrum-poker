@@ -1,0 +1,9 @@
+# Render blueprint. Deploy with: New > Blueprint, then point at this repo.
+# Render injects PORT at runtime, which the server reads (see server.ts).
+services:
+  - type: web
+    name: scrum-poker
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    autoDeploy: true

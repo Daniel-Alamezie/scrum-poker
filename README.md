@@ -102,7 +102,16 @@ that runs a persistent Node process or container. Render, Railway, Fly.io, or an
 Serverless platforms such as Vercel are not a fit, because they do not run a custom server or
 hold WebSocket state.
 
-With Docker:
+### Render (one click)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Daniel-Alamezie/scrum-poker)
+
+The repo ships a `render.yaml` blueprint. In the Render dashboard, choose **New > Blueprint**,
+connect this repository, and Render builds the Dockerfile and gives you a public URL. It reads
+the port from the environment automatically. Note the free plan sleeps after inactivity, so the
+first request after a quiet spell can be slow to wake.
+
+### Docker (anywhere)
 
 ```bash
 docker build -t scrum-poker .
