@@ -8,13 +8,13 @@ const config: Config = {
         // Accent for the whole app. Standard Tailwind emerald, named so it can
         // be re-themed in one place.
         brand: {
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          500: '#10b981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
+          50: '#fef5f0',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          500: '#ff8718',
+          600: '#f06c00',
+          700: '#e55000',
+          800: '#c2410c',
         },
       },
     },

@@ -61,12 +61,12 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
       {commonValue !== null ? (
         <div
           className={`rounded-2xl border p-6 text-center ${
-            isUnanimous ? 'border-brand-200 bg-brand-50' : 'border-amber-200 bg-amber-50'
+            isUnanimous ? 'border-green-200 bg-green-50' : 'border-brand-200 bg-brand-50'
           }`}
         >
           <p
             className={`mb-2 text-xs font-semibold uppercase tracking-wide ${
-              isUnanimous ? 'text-brand-700' : 'text-amber-700'
+              isUnanimous ? 'text-green-700' : 'text-brand-700'
             }`}
           >
             {isUnanimous ? 'Unanimous' : 'The room agrees on'}
@@ -74,14 +74,14 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
           <div className="flex items-baseline justify-center gap-2">
             <span
               className={`text-5xl font-bold leading-none ${
-                isUnanimous ? 'text-brand-700' : 'text-amber-700'
+                isUnanimous ? 'text-green-700' : 'text-brand-700'
               }`}
             >
               {commonValue}
             </span>
             <span
               className={`text-xl font-semibold ${
-                isUnanimous ? 'text-brand-600' : 'text-amber-600'
+                isUnanimous ? 'text-green-600' : 'text-brand-600'
               }`}
             >
               {unitLabel(commonValue, mode)}
@@ -122,7 +122,9 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
                       !hasVote
                         ? 'border-slate-200 bg-slate-100'
                         : isCommon
-                          ? 'border-brand-600 bg-brand-600'
+                          ? isUnanimous
+                            ? 'border-green-600 bg-green-600'
+                            : 'border-brand-600 bg-brand-600'
                           : 'border-slate-200 bg-white'
                     }`}
                   >
@@ -137,7 +139,11 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
                         </span>
                         <span
                           className={`mt-1 text-xs font-medium uppercase tracking-wide ${
-                            isCommon ? 'text-brand-100' : 'text-slate-400'
+                            isCommon
+                              ? isUnanimous
+                                ? 'text-green-100'
+                                : 'text-brand-100'
+                              : 'text-slate-400'
                           }`}
                         >
                           {mode === 'spike' ? (vote === 1 ? 'day' : 'days') : 'pts'}
