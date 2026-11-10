@@ -9,6 +9,7 @@ import { ModeSelector } from '@/components/ModeSelector'
 import { VotingCards } from '@/components/VotingCards'
 import { ParticipantList } from '@/components/ParticipantList'
 import { RevealBoard } from '@/components/RevealBoard'
+import { MakeHostDialog } from '@/components/MakeHostDialog'
 import type { VoteMode, VoteValue } from '@/lib/types'
 
 export default function RoomPage() {
@@ -34,6 +35,7 @@ export default function RoomPage() {
   const [joining, setJoining] = useState(false)
   const [copied, setCopied] = useState(false)
   const [selectedValue, setSelectedValue] = useState<VoteValue | null>(null)
+  const [makeHostTarget, setMakeHostTarget] = useState<{ id: string; name: string } | null>(null)
   const hasAutoJoined = useRef(false)
 
   // Auto-join if we have a stored name from creating or previously joining
@@ -90,10 +92,9 @@ export default function RoomPage() {
     changeMode(mode)
   }
 
-  function handleMakeHost(id: string, name: string) {
-    if (window.confirm(`Make ${name} the host? You will lose the host controls.`)) {
-      transferHost(id)
-    }
+  function handleConfirmMakeHost(id: string) {
+    transferHost(id)
+    setMakeHostTarget(null)
   }
 
   async function handleCopy(text: string) {
@@ -162,6 +163,11 @@ export default function RoomPage() {
   const votedCount = roomState.participants.filter(p => p.hasVoted).length
   const totalCount = roomState.participants.length
   const canReveal = isCreator && votedCount > 0 && !roomState.revealed
+  // Drop a pending handover if we are no longer host or the person has left.
+  const pendingTarget =
+    makeHostTarget && isCreator && roomState.participants.some(p => p.id === makeHostTarget.id)
+      ? makeHostTarget
+      : null
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -248,7 +254,7 @@ export default function RoomPage() {
           <ParticipantList
             participants={roomState.participants}
             currentParticipantId={participantId}
-            onMakeHost={isCreator ? handleMakeHost : undefined}
+            onMakeHost={isCreator ? (id, name) => setMakeHostTarget({ id, name }) : undefined}
           />
         </aside>
       </main>
@@ -276,6 +282,12 @@ export default function RoomPage() {
           )}
         </div>
       )}
+
+      <MakeHostDialog
+        target={pendingTarget}
+        onConfirm={handleConfirmMakeHost}
+        onCancel={() => setMakeHostTarget(null)}
+      />
     </div>
   )
 }
