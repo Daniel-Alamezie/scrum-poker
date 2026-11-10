@@ -10,7 +10,7 @@
     "url": "git+https://github.com/Daniel-Alamezie/scrum-poker.git"
   },
   "engines": {
-    "node": ">=20.15.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "tsx server.ts",
