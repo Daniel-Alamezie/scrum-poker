@@ -25,6 +25,7 @@ export default function RoomPage() {
     revealVotes,
     clearVotes,
     changeMode,
+    transferHost,
   } = useSocket()
 
   const [joined, setJoined] = useState(false)
@@ -55,6 +56,14 @@ export default function RoomPage() {
     if (revealed === false) setSelectedValue(null)
   }, [revealed])
 
+  // A mode change resets the round on the server, so drop the selected card
+  // on every screen, not just the host's. Otherwise voters keep seeing their
+  // old vote (in the wrong units) after it has been cleared.
+  const mode = roomState?.mode
+  useEffect(() => {
+    setSelectedValue(null)
+  }, [mode])
+
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault()
     if (!nameInput.trim()) return
@@ -79,6 +88,12 @@ export default function RoomPage() {
   function handleModeChange(mode: VoteMode) {
     setSelectedValue(null)
     changeMode(mode)
+  }
+
+  function handleMakeHost(id: string, name: string) {
+    if (window.confirm(`Make ${name} the host? You will lose the host controls.`)) {
+      transferHost(id)
+    }
   }
 
   async function handleCopy(text: string) {
@@ -233,6 +248,7 @@ export default function RoomPage() {
           <ParticipantList
             participants={roomState.participants}
             currentParticipantId={participantId}
+            onMakeHost={isCreator ? handleMakeHost : undefined}
           />
         </aside>
       </main>

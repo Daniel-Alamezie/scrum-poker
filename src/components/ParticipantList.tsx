@@ -1,14 +1,44 @@
 'use client'
 
+import { useLayoutEffect, useRef } from 'react'
 import type { Participant } from '@/lib/types'
+import { playHostHandover } from '@/lib/host-handover-animation'
 
 interface ParticipantListProps {
   participants: Participant[]
   currentParticipantId: string
+  /** Only passed for the current host, who can hand the role to someone else. */
+  onMakeHost?: (participantId: string, name: string) => void
 }
 
-export function ParticipantList({ participants, currentParticipantId }: ParticipantListProps) {
+export function ParticipantList({
+  participants,
+  currentParticipantId,
+  onMakeHost,
+}: ParticipantListProps) {
   const votedCount = participants.filter(p => p.hasVoted).length
+  const hostId = participants.find(p => p.isCreator)?.id ?? null
+  const previousHostId = useRef<string | null>(null)
+  const nameEls = useRef(new Map<string, HTMLElement>())
+  const badgeEls = useRef(new Map<string, HTMLElement>())
+
+  // Celebrate a handover on every screen in the room, not just the host's.
+  // The first render (joining a room) only records who the host is.
+  useLayoutEffect(() => {
+    const previous = previousHostId.current
+    previousHostId.current = hostId
+    if (!previous || !hostId || previous === hostId) return
+    const badge = badgeEls.current.get(hostId)
+    if (!badge) return
+    return playHostHandover(nameEls.current.get(previous) ?? null, badge)
+  }, [hostId])
+
+  function register(map: Map<string, HTMLElement>, id: string) {
+    return (el: HTMLElement | null) => {
+      if (el) map.set(id, el)
+      else map.delete(id)
+    }
+  }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -33,7 +63,10 @@ export function ParticipantList({ participants, currentParticipantId }: Particip
                 {participant.name.charAt(0)}
               </span>
 
-              <span className="truncate text-sm font-medium text-slate-800">
+              <span
+                ref={register(nameEls.current, participant.id)}
+                className="truncate text-sm font-medium text-slate-800"
+              >
                 {participant.name}
                 {participant.id === currentParticipantId && (
                   <span className="font-normal text-slate-400"> (you)</span>
@@ -41,11 +74,36 @@ export function ParticipantList({ participants, currentParticipantId }: Particip
               </span>
 
               {participant.isCreator && (
-                <span className="flex-shrink-0 text-xs font-semibold text-brand-700">host</span>
+                <span
+                  ref={register(badgeEls.current, participant.id)}
+                  className="inline-flex flex-shrink-0 items-center gap-1 text-xs font-semibold text-brand-700"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z" />
+                  </svg>
+                  host
+                </span>
               )}
             </div>
 
-            <VoteStatus hasVoted={participant.hasVoted} />
+            <div className="flex flex-shrink-0 items-center gap-2">
+              {onMakeHost && !participant.isCreator && (
+                <button
+                  type="button"
+                  onClick={() => onMakeHost(participant.id, participant.name)}
+                  aria-label={`Make ${participant.name} the host`}
+                  className="text-xs font-medium text-brand-700 underline hover:no-underline"
+                >
+                  Make host
+                </button>
+              )}
+              <VoteStatus hasVoted={participant.hasVoted} />
+            </div>
           </li>
         ))}
       </ul>

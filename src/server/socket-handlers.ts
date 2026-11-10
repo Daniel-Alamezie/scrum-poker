@@ -7,6 +7,7 @@ import {
   revealVotes,
   clearVotes,
   changeMode,
+  transferHost,
   removeParticipant,
 } from './room-manager'
 
@@ -100,6 +101,14 @@ export function registerSocketHandlers(io: Server): void {
 
     socket.on('change-mode', ({ mode }: { mode: VoteMode }) => {
       const result = changeMode(socket.id, mode)
+      if (result) {
+        io.to(result.code).emit('room-update', result.roomState)
+      }
+    })
+
+    socket.on('transfer-host', ({ participantId }: { participantId: string }) => {
+      if (typeof participantId !== 'string' || !participantId) return
+      const result = transferHost(socket.id, participantId)
       if (result) {
         io.to(result.code).emit('room-update', result.roomState)
       }

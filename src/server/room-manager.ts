@@ -9,7 +9,7 @@ interface ParticipantInternal {
 
 interface RoomInternal {
   code: string
-  creatorClientId: string
+  hostClientId: string
   participants: Map<string, ParticipantInternal>
   votes: Map<string, VoteValue>
   revealed: boolean
@@ -29,7 +29,7 @@ function toRoomState(room: RoomInternal): RoomState {
     id: p.clientId,
     name: p.name,
     hasVoted: room.votes.has(p.clientId),
-    isCreator: p.clientId === room.creatorClientId,
+    isCreator: p.clientId === room.hostClientId,
   }))
 
   const votes = room.revealed ? Object.fromEntries(room.votes.entries()) : {}
@@ -55,7 +55,7 @@ export function createRoom(
 
   const room: RoomInternal = {
     code,
-    creatorClientId: clientId,
+    hostClientId: clientId,
     participants: new Map([[clientId, { clientId, name, socketId }]]),
     votes: new Map(),
     revealed: false,
@@ -93,10 +93,10 @@ export function joinRoom(
   return { roomState: toRoomState(room) }
 }
 
-function authoriseCreator(socketId: string): RoomInternal | null {
+function authoriseHost(socketId: string): RoomInternal | null {
   const found = findBySocket(socketId)
   if (!found.room || !found.participant) return null
-  if (found.participant.clientId !== found.room.creatorClientId) return null
+  if (found.participant.clientId !== found.room.hostClientId) return null
   return found.room
 }
 
@@ -112,7 +112,7 @@ export function castVote(
 }
 
 export function revealVotes(socketId: string): { roomState: RoomState; code: string } | null {
-  const room = authoriseCreator(socketId)
+  const room = authoriseHost(socketId)
   if (!room) return null
 
   room.revealed = true
@@ -120,7 +120,7 @@ export function revealVotes(socketId: string): { roomState: RoomState; code: str
 }
 
 export function clearVotes(socketId: string): { roomState: RoomState; code: string } | null {
-  const room = authoriseCreator(socketId)
+  const room = authoriseHost(socketId)
   if (!room) return null
 
   room.votes.clear()
@@ -132,12 +132,29 @@ export function changeMode(
   socketId: string,
   mode: VoteMode
 ): { roomState: RoomState; code: string } | null {
-  const room = authoriseCreator(socketId)
+  const room = authoriseHost(socketId)
   if (!room) return null
 
   room.mode = mode
   room.votes.clear()
   room.revealed = false
+  return { roomState: toRoomState(room), code: room.code }
+}
+
+/**
+ * Hands the host role to another participant who is currently in the room.
+ * Only the current host can do this, and the round is left untouched.
+ */
+export function transferHost(
+  socketId: string,
+  targetClientId: string
+): { roomState: RoomState; code: string } | null {
+  const room = authoriseHost(socketId)
+  if (!room) return null
+  if (targetClientId === room.hostClientId) return null
+  if (!room.participants.has(targetClientId)) return null
+
+  room.hostClientId = targetClientId
   return { roomState: toRoomState(room), code: room.code }
 }
 
@@ -152,9 +169,10 @@ export function removeParticipant(socketId: string): { roomState: RoomState; cod
   room.participants.delete(participant.clientId)
   room.votes.delete(participant.clientId)
 
-  // Ownership stays with the original creator's clientId. If they rejoin in
-  // the same tab they are restored as host. We do not transfer ownership on
-  // disconnect, which previously caused the creator to lose their controls.
+  // Ownership stays with the host's clientId. If they rejoin in the same tab
+  // they are restored as host. We do not transfer ownership on disconnect,
+  // which previously caused the creator to lose their controls. Handing the
+  // role over is an explicit action instead (see transferHost).
 
   if (room.participants.size === 0) {
     room.emptyTimer = setTimeout(() => rooms.delete(room.code), EMPTY_ROOM_TTL_MS)

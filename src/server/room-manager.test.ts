@@ -6,6 +6,7 @@ import {
   revealVotes,
   clearVotes,
   changeMode,
+  transferHost,
   removeParticipant,
 } from './room-manager'
 
@@ -120,5 +121,57 @@ describe('voting visibility', () => {
     createRoom('Sarah', 'creator', 's-c4')
     revealVotes('s-c4')
     expect(castVote('s-c4', 5)).toBeNull()
+  })
+})
+
+describe('transferring the host role', () => {
+  it('moves host controls to the chosen participant', () => {
+    const { code } = createRoom('Sarah', 'host-a', 't-a')
+    joinRoom(code, 'Tom', 'member-b', 't-b')
+    const state = transferHost('t-a', 'member-b')!.roomState
+    expect(state.participants.find(p => p.id === 'member-b')?.isCreator).toBe(true)
+    expect(state.participants.find(p => p.id === 'host-a')?.isCreator).toBe(false)
+    expect(revealVotes('t-b')).not.toBeNull()
+    expect(revealVotes('t-a')).toBeNull()
+  })
+
+  it('only lets the current host transfer', () => {
+    const { code } = createRoom('Sarah', 'host-c', 't-c')
+    joinRoom(code, 'Tom', 'member-d', 't-d')
+    joinRoom(code, 'Ana', 'member-e', 't-e')
+    expect(transferHost('t-d', 'member-e')).toBeNull()
+    expect(transferHost('t-d', 'member-d')).toBeNull()
+  })
+
+  it('rejects targets who are not in the room', () => {
+    const { code } = createRoom('Sarah', 'host-f', 't-f')
+    joinRoom(code, 'Tom', 'member-g', 't-g')
+    removeParticipant('t-g')
+    expect(transferHost('t-f', 'member-g')).toBeNull()
+    expect(transferHost('t-f', 'nobody')).toBeNull()
+    expect(transferHost('t-f', 'host-f')).toBeNull()
+  })
+
+  it('keeps the round as it was', () => {
+    const { code } = createRoom('Sarah', 'host-h', 't-h')
+    joinRoom(code, 'Tom', 'member-i', 't-i')
+    changeMode('t-h', 'spike')
+    castVote('t-h', 2)
+    castVote('t-i', 3)
+    revealVotes('t-h')
+    const state = transferHost('t-h', 'member-i')!.roomState
+    expect(state.mode).toBe('spike')
+    expect(state.revealed).toBe(true)
+    expect(Object.keys(state.votes)).toHaveLength(2)
+  })
+
+  it('does not hand host back to the previous host when they rejoin', () => {
+    const { code } = createRoom('Sarah', 'host-j', 't-j')
+    joinRoom(code, 'Tom', 'member-k', 't-k')
+    transferHost('t-j', 'member-k')
+    removeParticipant('t-j')
+    const state = stateOf(joinRoom(code, 'Sarah', 'host-j', 't-j2'))
+    expect(state.participants.find(p => p.id === 'host-j')?.isCreator).toBe(false)
+    expect(state.participants.find(p => p.id === 'member-k')?.isCreator).toBe(true)
   })
 })

@@ -15,6 +15,7 @@ reveals them.
   - **Spike** in days (1, 1.5, 2, 2.5, 3)
 - On reveal it surfaces the agreed number, or a prompt to discuss when there is no clear winner
 - Live indication of who has voted and who the room is still waiting on
+- The host can hand host controls to another participant
 - No database. All session state lives in server memory and is gone once everyone leaves
 - No accounts. People are identified by the name they type in
 
@@ -78,8 +79,13 @@ src/
 There is no login. A person is identified by a `clientId` generated once per browser tab and
 kept in `sessionStorage`. This is deliberate: the socket connection changes when the creator
 navigates from the landing page into the room, so ownership cannot be tied to a socket id.
-The server tracks `creatorClientId` per room and recognises the creator on whichever socket
-they reconnect with. Only the creator can reveal votes, clear the round, or change the mode.
+The server tracks `hostClientId` per room and recognises the host on whichever socket
+they reconnect with. Only the host can reveal votes, clear the round, or change the mode.
+
+The person who creates the room starts as host. The host can hand the role to anyone else
+currently in the room with **Make host** in the participant list. The current round, votes and
+mode are kept as they are. Host status never moves on its own: if the host drops out, the role
+waits for them to rejoin from the same tab.
 
 ### Round lifecycle
 
