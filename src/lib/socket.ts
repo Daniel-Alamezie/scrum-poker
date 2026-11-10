@@ -97,6 +97,10 @@ export function useSocket() {
     socketRef.current?.emit('change-mode', { mode })
   }, [])
 
+  const transferHost = useCallback((participantId: string) => {
+    socketRef.current?.emit('transfer-host', { participantId })
+  }, [])
+
   return {
     roomState,
     participantId,
@@ -107,5 +111,6 @@ export function useSocket() {
     revealVotes,
     clearVotes,
     changeMode,
+    transferHost,
   }
 }
