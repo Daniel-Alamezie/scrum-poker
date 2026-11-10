@@ -8,7 +8,7 @@ from typo fixes to new features.
 ```bash
 git clone https://github.com/Daniel-Alamezie/scrum-poker.git
 cd scrum-poker
-nvm use        # Node 20.15.0, see .nvmrc
+nvm use        # Node 22.12.0, see .nvmrc
 npm install
 npm run dev
 ```
