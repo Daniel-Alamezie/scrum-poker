@@ -175,3 +175,32 @@ describe('transferring the host role', () => {
     expect(state.participants.find(p => p.id === 'member-k')?.isCreator).toBe(true)
   })
 })
+
+describe('t-shirt sizing and vote validation', () => {
+  it('lets the host switch to t-shirt sizes and accepts sizes as votes', () => {
+    const { code } = createRoom('Sarah', 'host-ts', 'ts-h')
+    joinRoom(code, 'Tom', 'member-ts', 'ts-m')
+    expect(changeMode('ts-h', 'tshirt')!.roomState.mode).toBe('tshirt')
+    castVote('ts-h', 3)
+    castVote('ts-m', 3)
+    const revealed = revealVotes('ts-h')!.roomState
+    expect(revealed.votes).toEqual({ 'host-ts': 3, 'member-ts': 3 })
+  })
+
+  it('rejects votes that do not belong to the current mode', () => {
+    createRoom('Sarah', 'host-v', 'v-h')
+    expect(castVote('v-h', 4)).toBeNull() // 4 is not a story point
+    expect(castVote('v-h', 5)).not.toBeNull()
+    changeMode('v-h', 'tshirt')
+    expect(castVote('v-h', 8)).toBeNull() // no "8 sizes"
+    expect(castVote('v-h', 1.5)).toBeNull()
+    expect(castVote('v-h', 4)).not.toBeNull()
+    changeMode('v-h', 'spike')
+    expect(castVote('v-h', 2.5)).not.toBeNull()
+  })
+
+  it('rejects unknown modes', () => {
+    createRoom('Sarah', 'host-u', 'u-h')
+    expect(changeMode('u-h', 'bogus' as never)).toBeNull()
+  })
+})

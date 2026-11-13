@@ -1,5 +1,6 @@
 'use client'
 
+import { formatVote, voteUnit } from '@/lib/types'
 import type { VoteMode } from '@/lib/types'
 
 interface VotingCardProps {
@@ -10,13 +11,8 @@ interface VotingCardProps {
   onClick: () => void
 }
 
-function formatUnit(value: number, mode: VoteMode): string {
-  if (mode === 'spike') return value === 1 ? 'day' : 'days'
-  return 'pts'
-}
-
 export function VotingCard({ value, mode, selected, disabled, onClick }: VotingCardProps) {
-  const unit = formatUnit(value, mode)
+  const unit = voteUnit(value, mode, true)
 
   return (
     <button
@@ -34,15 +30,17 @@ export function VotingCard({ value, mode, selected, disabled, onClick }: VotingC
       <span
         className={`text-3xl font-bold leading-none ${selected ? 'text-white' : 'text-slate-900'}`}
       >
-        {value}
+        {formatVote(value, mode)}
       </span>
-      <span
-        className={`mt-1 text-xs font-medium uppercase tracking-wide ${
-          selected ? 'text-brand-100' : 'text-slate-400'
-        }`}
-      >
-        {unit}
-      </span>
+      {unit && (
+        <span
+          className={`mt-1 text-xs font-medium uppercase tracking-wide ${
+            selected ? 'text-brand-100' : 'text-slate-400'
+          }`}
+        >
+          {unit}
+        </span>
+      )}
     </button>
   )
 }

@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto'
+import { isVoteMode, valuesForMode } from '../lib/types'
 import type { VoteMode, VoteValue, Participant, RoomState } from '../lib/types'
 
 interface ParticipantInternal {
@@ -106,6 +107,9 @@ export function castVote(
 ): { roomState: RoomState; code: string } | null {
   const { room, participant } = findBySocket(socketId)
   if (!room || !participant || room.revealed) return null
+  // Only accept a card from the current mode, so a vote sent just before a
+  // mode switch cannot land as something like "8 sizes".
+  if (!valuesForMode(room.mode).includes(value)) return null
 
   room.votes.set(participant.clientId, value)
   return { roomState: toRoomState(room), code: room.code }
@@ -133,7 +137,7 @@ export function changeMode(
   mode: VoteMode
 ): { roomState: RoomState; code: string } | null {
   const room = authoriseHost(socketId)
-  if (!room) return null
+  if (!room || !isVoteMode(mode)) return null
 
   room.mode = mode
   room.votes.clear()

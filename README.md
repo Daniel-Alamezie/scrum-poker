@@ -13,6 +13,7 @@ reveals them.
 - Two estimation modes, switchable by the host at any time:
   - **Story points** on a Fibonacci scale (1, 2, 3, 5, 8)
   - **Spike** in days (1, 1.5, 2, 2.5, 3)
+  - **T-shirt sizes** (XS, S, M, L, XL) for rough, early sizing
 - On reveal it surfaces the agreed number, or a prompt to discuss when there is no clear winner
 - Live indication of who has voted and who the room is still waiting on
 - The host can hand host controls to another participant
@@ -68,7 +69,7 @@ src/
     socket-handlers.ts     Maps socket events to room-manager calls
   lib/
     socket.ts              Client hook (useSocket) wrapping the socket connection
-    types.ts               Shared types and the Fibonacci / Spike value sets
+    types.ts               Shared types, each mode's values, and vote labels
   components/              React components, styled with Tailwind
     ui/                    Small primitives (Button, Input)
   app/                     Next.js routes (landing page and /room/[code])

@@ -1,6 +1,6 @@
 'use client'
 
-import { FIBONACCI_VALUES, SPIKE_VALUES } from '@/lib/types'
+import { formatVote, valuesForMode, voteUnit } from '@/lib/types'
 import type { VoteMode, VoteValue } from '@/lib/types'
 import { VotingCard } from './VotingCard'
 
@@ -12,7 +12,8 @@ interface VotingCardsProps {
 }
 
 export function VotingCards({ mode, selectedValue, disabled, onVote }: VotingCardsProps) {
-  const values = mode === 'fibonacci' ? [...FIBONACCI_VALUES] : [...SPIKE_VALUES]
+  const values = valuesForMode(mode)
+  const selectedUnit = selectedValue === null ? '' : voteUnit(selectedValue, mode)
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -33,8 +34,8 @@ export function VotingCards({ mode, selectedValue, disabled, onVote }: VotingCar
         <p className="text-center text-sm text-slate-600">
           You voted{' '}
           <strong className="text-brand-700">
-            {selectedValue}
-            {mode === 'spike' ? (selectedValue === 1 ? ' day' : ' days') : ' points'}
+            {formatVote(selectedValue, mode)}
+            {selectedUnit && ` ${selectedUnit}`}
           </strong>
           . You can change your vote until the host reveals.
         </p>

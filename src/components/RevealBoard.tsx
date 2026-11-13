@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { formatVote, voteUnit } from '@/lib/types'
 import type { Participant, VoteMode, VoteValue } from '@/lib/types'
 
 interface RevealBoardProps {
@@ -19,11 +20,6 @@ const NO_CONSENSUS_LINES = [
   'The room is divided, talk it out',
   'No clear winner, over to the team',
 ]
-
-function unitLabel(value: VoteValue, mode: VoteMode): string {
-  if (mode === 'spike') return value === 1 ? 'day' : 'days'
-  return value === 1 ? 'point' : 'points'
-}
 
 /**
  * The single most frequent value, or null when there is a tie for the top
@@ -77,15 +73,17 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
                 isUnanimous ? 'text-green-700' : 'text-brand-700'
               }`}
             >
-              {commonValue}
+              {formatVote(commonValue, mode)}
             </span>
-            <span
-              className={`text-xl font-semibold ${
-                isUnanimous ? 'text-green-600' : 'text-brand-600'
-              }`}
-            >
-              {unitLabel(commonValue, mode)}
-            </span>
+            {voteUnit(commonValue, mode) && (
+              <span
+                className={`text-xl font-semibold ${
+                  isUnanimous ? 'text-green-600' : 'text-brand-600'
+                }`}
+              >
+                {voteUnit(commonValue, mode)}
+              </span>
+            )}
           </div>
         </div>
       ) : (
@@ -93,7 +91,7 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
           <div className="mb-2 text-3xl">&#129336;</div>
           <p className="text-2xl font-bold text-slate-700">{iceBreaker}</p>
           <p className="mt-1 text-sm text-slate-500">
-            No single number stood out. Compare the cards below and resolve it together.
+            No single answer stood out. Compare the cards below and resolve it together.
           </p>
         </div>
       )}
@@ -135,19 +133,21 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
                             isCommon ? 'text-white' : 'text-slate-900'
                           }`}
                         >
-                          {vote}
+                          {formatVote(vote, mode)}
                         </span>
-                        <span
-                          className={`mt-1 text-xs font-medium uppercase tracking-wide ${
-                            isCommon
-                              ? isUnanimous
-                                ? 'text-green-100'
-                                : 'text-brand-100'
-                              : 'text-slate-400'
-                          }`}
-                        >
-                          {mode === 'spike' ? (vote === 1 ? 'day' : 'days') : 'pts'}
-                        </span>
+                        {voteUnit(vote, mode, true) && (
+                          <span
+                            className={`mt-1 text-xs font-medium uppercase tracking-wide ${
+                              isCommon
+                                ? isUnanimous
+                                  ? 'text-green-100'
+                                  : 'text-brand-100'
+                                : 'text-slate-400'
+                            }`}
+                          >
+                            {voteUnit(vote, mode, true)}
+                          </span>
+                        )}
                       </>
                     ) : (
                       <span className="px-2 text-center text-xs text-slate-400">No vote</span>
