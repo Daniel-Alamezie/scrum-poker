@@ -11,12 +11,13 @@ interface ModeSelectorProps {
 const modes: { value: VoteMode; label: string; description: string }[] = [
   { value: 'fibonacci', label: 'Story points', description: '1, 2, 3, 5, 8' },
   { value: 'spike', label: 'Spike', description: '1 to 3 days' },
+  { value: 'tshirt', label: 'T-shirt sizes', description: 'XS to XL' },
 ]
 
 export function ModeSelector({ mode, onChange, isCreator }: ModeSelectorProps) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {modes.map(m => (
           <button
             key={m.value}
