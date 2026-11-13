@@ -9,6 +9,7 @@ import {
   cardProblem,
   cardTextSize,
 } from '@/lib/types'
+import { useDragReorder } from '@/lib/use-drag-reorder'
 
 interface CustomDeckDialogProps {
   open: boolean
@@ -51,6 +52,14 @@ export function CustomDeckDialog({ open, initialDeck, onDeal, onCancel }: Custom
   // True once the host has changed anything. Closing the dialog (a stray click
   // outside, Escape, Close) keeps those edits; only dealing or Start over clears them.
   const [edited, setEdited] = useState(false)
+  const { listRef, itemProps, draggingKey, animateNextChange, wasJustDragged } = useDragReorder(
+    deck,
+    next => {
+      setDeck(next)
+      setNewest(null)
+      setEdited(true)
+    }
+  )
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -90,6 +99,7 @@ export function CustomDeckDialog({ open, initialDeck, onDeal, onCancel }: Custom
   }
 
   function removeCard(index: number) {
+    animateNextChange()
     setDeck(deck.filter((_, i) => i !== index))
     setError(null)
     setEdited(true)
@@ -99,6 +109,7 @@ export function CustomDeckDialog({ open, initialDeck, onDeal, onCancel }: Custom
     const next = [...deck]
     const target = index + by
     ;[next[index], next[target]] = [next[target], next[index]]
+    animateNextChange()
     setDeck(next)
     setEdited(true)
   }
@@ -137,7 +148,7 @@ export function CustomDeckDialog({ open, initialDeck, onDeal, onCancel }: Custom
   }
 
   function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
-    if (e.target === e.currentTarget) onCancel()
+    if (e.target === e.currentTarget && !wasJustDragged()) onCancel()
   }
 
   return (
@@ -202,7 +213,10 @@ export function CustomDeckDialog({ open, initialDeck, onDeal, onCancel }: Custom
             {error}
           </p>
 
-          <div className="mb-1 flex min-h-[7.5rem] flex-wrap content-start gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3">
+          <div
+            ref={listRef}
+            className="relative mb-1 flex min-h-[7.5rem] flex-wrap content-start gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3"
+          >
             {deck.length === 0 ? (
               <p className="m-auto text-center text-sm text-slate-400">
                 Your cards will appear here
@@ -211,9 +225,13 @@ export function CustomDeckDialog({ open, initialDeck, onDeal, onCancel }: Custom
               deck.map((card, i) => (
                 <div
                   key={card}
-                  className={`group relative flex h-24 w-16 flex-col items-center justify-center rounded-lg border-2 border-slate-200 bg-white px-1 shadow-sm ${
-                    card === newest ? 'deck-card-new' : ''
-                  }`}
+                  {...itemProps(card)}
+                  title="Drag to reorder"
+                  className={`group relative flex h-24 w-16 touch-none select-none flex-col items-center justify-center rounded-lg border-2 bg-white px-1 ${
+                    card === draggingKey
+                      ? 'z-10 cursor-grabbing border-brand-500 shadow-xl'
+                      : 'cursor-grab border-slate-200 shadow-sm'
+                  } ${card === newest ? 'deck-card-new' : ''}`}
                 >
                   <span
                     className={`${PREVIEW_TEXT[cardTextSize(deck)]} w-full [overflow-wrap:anywhere] text-center font-bold leading-none text-slate-900`}
@@ -255,8 +273,8 @@ export function CustomDeckDialog({ open, initialDeck, onDeal, onCancel }: Custom
             )}
           </div>
           <p className="mb-6 text-xs text-slate-500">
-            {deck.length} of {CUSTOM_DECK_MAX} cards, up to {CUSTOM_LABEL_MAX} characters each.
-            Hover a card to move or remove it.
+            {deck.length} of {CUSTOM_DECK_MAX} cards, up to {CUSTOM_LABEL_MAX} characters each. Drag
+            cards to reorder them, or hover one to move or remove it.
           </p>
 
           <div className="flex items-center gap-2">
