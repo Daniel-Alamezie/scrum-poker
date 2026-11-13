@@ -10,6 +10,7 @@ import { VotingCards } from '@/components/VotingCards'
 import { ParticipantList } from '@/components/ParticipantList'
 import { RevealBoard } from '@/components/RevealBoard'
 import { MakeHostDialog } from '@/components/MakeHostDialog'
+import { CustomDeckDialog } from '@/components/CustomDeckDialog'
 import type { VoteMode, VoteValue } from '@/lib/types'
 
 export default function RoomPage() {
@@ -26,6 +27,7 @@ export default function RoomPage() {
     revealVotes,
     clearVotes,
     changeMode,
+    setCustomDeck,
     transferHost,
   } = useSocket()
 
@@ -36,6 +38,7 @@ export default function RoomPage() {
   const [copied, setCopied] = useState(false)
   const [selectedValue, setSelectedValue] = useState<VoteValue | null>(null)
   const [makeHostTarget, setMakeHostTarget] = useState<{ id: string; name: string } | null>(null)
+  const [editingDeck, setEditingDeck] = useState(false)
   const hasAutoJoined = useRef(false)
 
   // Auto-join if we have a stored name from creating or previously joining
@@ -61,10 +64,11 @@ export default function RoomPage() {
   // A mode change resets the round on the server, so drop the selected card
   // on every screen, not just the host's. Otherwise voters keep seeing their
   // old vote (in the wrong units) after it has been cleared.
-  const mode = roomState?.mode
+  // A new custom deck does the same, even while staying in custom mode.
+  const deckKey = `${roomState?.mode}:${roomState?.customDeck.join('|')}`
   useEffect(() => {
     setSelectedValue(null)
-  }, [mode])
+  }, [deckKey])
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault()
@@ -90,6 +94,13 @@ export default function RoomPage() {
   function handleModeChange(mode: VoteMode) {
     setSelectedValue(null)
     changeMode(mode)
+  }
+
+  async function handleDealDeck(labels: string[]) {
+    // Throws if the server does not confirm; the editor shows the message.
+    await setCustomDeck(labels)
+    setSelectedValue(null)
+    setEditingDeck(false)
   }
 
   function handleConfirmMakeHost(id: string) {
@@ -171,6 +182,30 @@ export default function RoomPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
+      {!connected && (
+        <div
+          role="status"
+          className="flex items-center justify-center gap-2 bg-amber-100 px-4 py-2 text-sm font-medium text-amber-900"
+        >
+          <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          Connection lost, reconnecting. Changes won&apos;t reach the room until you&apos;re back.
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-brand-700 px-6 py-4 shadow-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
@@ -223,7 +258,13 @@ export default function RoomPage() {
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-700">
               Voting mode
             </h2>
-            <ModeSelector mode={roomState.mode} onChange={handleModeChange} isCreator={isCreator} />
+            <ModeSelector
+              mode={roomState.mode}
+              customDeck={roomState.customDeck}
+              onChange={handleModeChange}
+              onCustomise={() => setEditingDeck(true)}
+              isCreator={isCreator}
+            />
           </section>
 
           {/* Voting / reveal area */}
@@ -237,10 +278,12 @@ export default function RoomPage() {
                 participants={roomState.participants}
                 votes={roomState.votes}
                 mode={roomState.mode}
+                customDeck={roomState.customDeck}
               />
             ) : (
               <VotingCards
                 mode={roomState.mode}
+                customDeck={roomState.customDeck}
                 selectedValue={selectedValue}
                 disabled={false}
                 onVote={handleVote}
@@ -282,6 +325,13 @@ export default function RoomPage() {
           )}
         </div>
       )}
+
+      <CustomDeckDialog
+        open={editingDeck && isCreator}
+        initialDeck={roomState.customDeck}
+        onDeal={handleDealDeck}
+        onCancel={() => setEditingDeck(false)}
+      />
 
       <MakeHostDialog
         target={pendingTarget}

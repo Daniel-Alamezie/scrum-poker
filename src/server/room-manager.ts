@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto'
-import { isVoteMode, valuesForMode } from '../lib/types'
+import { isVoteMode, parseCustomDeck, valuesForMode } from '../lib/types'
 import type { VoteMode, VoteValue, Participant, RoomState } from '../lib/types'
 
 interface ParticipantInternal {
@@ -15,6 +15,7 @@ interface RoomInternal {
   votes: Map<string, VoteValue>
   revealed: boolean
   mode: VoteMode
+  customDeck: string[]
   emptyTimer?: ReturnType<typeof setTimeout>
 }
 
@@ -41,6 +42,7 @@ function toRoomState(room: RoomInternal): RoomState {
     votes,
     revealed: room.revealed,
     mode: room.mode,
+    customDeck: [...room.customDeck],
   }
 }
 
@@ -61,6 +63,7 @@ export function createRoom(
     votes: new Map(),
     revealed: false,
     mode: 'fibonacci',
+    customDeck: [],
   }
 
   rooms.set(code, room)
@@ -109,7 +112,7 @@ export function castVote(
   if (!room || !participant || room.revealed) return null
   // Only accept a card from the current mode, so a vote sent just before a
   // mode switch cannot land as something like "8 sizes".
-  if (!valuesForMode(room.mode).includes(value)) return null
+  if (!valuesForMode(room.mode, room.customDeck).includes(value)) return null
 
   room.votes.set(participant.clientId, value)
   return { roomState: toRoomState(room), code: room.code }
@@ -138,8 +141,31 @@ export function changeMode(
 ): { roomState: RoomState; code: string } | null {
   const room = authoriseHost(socketId)
   if (!room || !isVoteMode(mode)) return null
+  // Custom needs a deck first; that goes through setCustomDeck.
+  if (mode === 'custom' && room.customDeck.length === 0) return null
 
   room.mode = mode
+  room.votes.clear()
+  room.revealed = false
+  return { roomState: toRoomState(room), code: room.code }
+}
+
+/**
+ * Deals the host's own cards: stores the deck, switches the room to custom
+ * mode and starts a fresh round. The deck is checked with the same rules the
+ * editor uses, so a bad deck from a modified client is simply ignored.
+ */
+export function setCustomDeck(
+  socketId: string,
+  labels: unknown
+): { roomState: RoomState; code: string } | null {
+  const room = authoriseHost(socketId)
+  if (!room) return null
+  const deck = parseCustomDeck(labels)
+  if (!deck) return null
+
+  room.customDeck = deck
+  room.mode = 'custom'
   room.votes.clear()
   room.revealed = false
   return { roomState: toRoomState(room), code: room.code }

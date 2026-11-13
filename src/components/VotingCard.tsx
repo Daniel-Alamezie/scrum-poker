@@ -1,25 +1,32 @@
 'use client'
 
-import { formatVote, voteUnit } from '@/lib/types'
-import type { VoteMode } from '@/lib/types'
+import type { CardTextSize } from '@/lib/types'
 
 interface VotingCardProps {
-  value: number
-  mode: VoteMode
+  label: string
+  unit: string
+  textSize: CardTextSize
   selected: boolean
   disabled: boolean
   onClick: () => void
 }
 
-export function VotingCard({ value, mode, selected, disabled, onClick }: VotingCardProps) {
-  const unit = voteUnit(value, mode, true)
+const TEXT_SIZE = { lg: 'text-3xl', md: 'text-xl', sm: 'text-sm', xs: 'text-xs' } as const
 
+export function VotingCard({
+  label,
+  unit,
+  textSize,
+  selected,
+  disabled,
+  onClick,
+}: VotingCardProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={[
-        'relative flex h-28 w-20 flex-col items-center justify-center rounded-xl border-2 transition-all duration-200',
+        'relative flex h-28 w-20 flex-col items-center justify-center rounded-xl border-2 px-1 transition-all duration-200',
         'cursor-pointer select-none outline-none',
         selected
           ? 'scale-105 border-brand-600 bg-brand-600 text-white shadow-lg vote-card-selected'
@@ -28,9 +35,11 @@ export function VotingCard({ value, mode, selected, disabled, onClick }: VotingC
       ].join(' ')}
     >
       <span
-        className={`text-3xl font-bold leading-none ${selected ? 'text-white' : 'text-slate-900'}`}
+        className={`${TEXT_SIZE[textSize]} w-full [overflow-wrap:anywhere] text-center font-bold leading-none ${
+          selected ? 'text-white' : 'text-slate-900'
+        }`}
       >
-        {formatVote(value, mode)}
+        {label}
       </span>
       {unit && (
         <span
