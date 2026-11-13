@@ -14,6 +14,8 @@ reveals them.
   - **Story points** on a Fibonacci scale (1, 2, 3, 5, 8)
   - **Spike** in days (1, 1.5, 2, 2.5, 3)
   - **T-shirt sizes** (XS, S, M, L, XL) for rough, early sizing
+  - **Custom**: the host builds their own deck of 2 to 8 cards (words or emoji), from scratch
+    or from a preset. The deck lives with the room and is gone when the room closes
 - On reveal it surfaces the agreed number, or a prompt to discuss when there is no clear winner
 - Live indication of who has voted and who the room is still waiting on
 - The host can hand host controls to another participant

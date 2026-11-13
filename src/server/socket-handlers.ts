@@ -8,6 +8,7 @@ import {
   clearVotes,
   changeMode,
   transferHost,
+  setCustomDeck,
   removeParticipant,
 } from './room-manager'
 
@@ -105,6 +106,19 @@ export function registerSocketHandlers(io: Server): void {
         io.to(result.code).emit('room-update', result.roomState)
       }
     })
+
+    socket.on(
+      'set-custom-deck',
+      ({ labels }: { labels: unknown }, callback?: (res: { error?: string }) => void) => {
+        const result = setCustomDeck(socket.id, labels)
+        if (!result) {
+          callback?.({ error: 'Those cards could not be dealt. Only the host can deal a deck.' })
+          return
+        }
+        io.to(result.code).emit('room-update', result.roomState)
+        callback?.({})
+      }
+    )
 
     socket.on('transfer-host', ({ participantId }: { participantId: string }) => {
       if (typeof participantId !== 'string' || !participantId) return

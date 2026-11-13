@@ -5,6 +5,9 @@ import { io, Socket } from 'socket.io-client'
 import type { RoomState, VoteMode, VoteValue } from './types'
 
 const CLIENT_ID_KEY = 'scrum-poker-client-id'
+const DEAL_TIMEOUT_MS = 5000
+const OFFLINE_MESSAGE =
+  "Couldn't reach the room, so the cards weren't dealt. Check your connection and try again."
 
 /**
  * A stable per-tab identity that survives client-side navigation (and short
@@ -97,6 +100,25 @@ export function useSocket() {
     socketRef.current?.emit('change-mode', { mode })
   }, [])
 
+  /**
+   * Resolves once the server has dealt the deck. Rejects if it refuses, or if
+   * there is no answer in time (for example the connection has dropped), so
+   * the editor can stay open and say so instead of closing as if it worked.
+   */
+  const setCustomDeck = useCallback((labels: string[]): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const socket = socketRef.current
+      if (!socket) return reject(new Error(OFFLINE_MESSAGE))
+      socket
+        .timeout(DEAL_TIMEOUT_MS)
+        .emit('set-custom-deck', { labels }, (err: Error | null, res?: { error?: string }) => {
+          if (err) reject(new Error(OFFLINE_MESSAGE))
+          else if (res?.error) reject(new Error(res.error))
+          else resolve()
+        })
+    })
+  }, [])
+
   const transferHost = useCallback((participantId: string) => {
     socketRef.current?.emit('transfer-host', { participantId })
   }, [])
@@ -111,6 +133,7 @@ export function useSocket() {
     revealVotes,
     clearVotes,
     changeMode,
+    setCustomDeck,
     transferHost,
   }
 }

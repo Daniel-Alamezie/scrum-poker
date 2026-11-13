@@ -1,14 +1,19 @@
 'use client'
 
 import { useMemo } from 'react'
-import { formatVote, voteUnit } from '@/lib/types'
+import { cardTextSize, formatVote, valuesForMode, voteUnit } from '@/lib/types'
 import type { Participant, VoteMode, VoteValue } from '@/lib/types'
 
 interface RevealBoardProps {
   participants: Participant[]
   votes: Record<string, VoteValue>
   mode: VoteMode
+  customDeck: readonly string[]
 }
+
+const CARD_TEXT = { lg: 'text-3xl', md: 'text-xl', sm: 'text-sm', xs: 'text-xs' } as const
+// The headline has room for more, but long labels still step down so they fit on a phone.
+const HEADLINE_TEXT = { lg: 'text-5xl', md: 'text-5xl', sm: 'text-4xl', xs: 'text-3xl' } as const
 
 // Shown when the room cannot agree on a single number. Light, but still
 // professional. No em dashes by design.
@@ -34,12 +39,15 @@ function getCommonValue(votes: VoteValue[]): VoteValue | null {
   return top.length === 1 ? top[0] : null
 }
 
-export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
+export function RevealBoard({ participants, votes, mode, customDeck }: RevealBoardProps) {
   const voteValues = useMemo(
     () => participants.map(p => votes[p.id]).filter((v): v is VoteValue => v !== undefined),
     [participants, votes]
   )
 
+  const textSize = cardTextSize(
+    valuesForMode(mode, customDeck).map(v => formatVote(v, mode, customDeck))
+  )
   const commonValue = useMemo(() => getCommonValue(voteValues), [voteValues])
   const abstained = participants.filter(p => votes[p.id] === undefined)
   const isUnanimous = voteValues.length > 1 && new Set(voteValues).size === 1
@@ -69,11 +77,11 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
           </p>
           <div className="flex items-baseline justify-center gap-2">
             <span
-              className={`text-5xl font-bold leading-none ${
+              className={`${HEADLINE_TEXT[textSize]} min-w-0 [overflow-wrap:anywhere] font-bold leading-none ${
                 isUnanimous ? 'text-green-700' : 'text-brand-700'
               }`}
             >
-              {formatVote(commonValue, mode)}
+              {formatVote(commonValue, mode, customDeck)}
             </span>
             {voteUnit(commonValue, mode) && (
               <span
@@ -129,11 +137,11 @@ export function RevealBoard({ participants, votes, mode }: RevealBoardProps) {
                     {hasVote ? (
                       <>
                         <span
-                          className={`text-3xl font-bold leading-none ${
+                          className={`${CARD_TEXT[textSize]} w-full [overflow-wrap:anywhere] px-1 text-center font-bold leading-none ${
                             isCommon ? 'text-white' : 'text-slate-900'
                           }`}
                         >
-                          {formatVote(vote, mode)}
+                          {formatVote(vote, mode, customDeck)}
                         </span>
                         {voteUnit(vote, mode, true) && (
                           <span

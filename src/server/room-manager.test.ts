@@ -7,6 +7,7 @@ import {
   clearVotes,
   changeMode,
   transferHost,
+  setCustomDeck,
   removeParticipant,
 } from './room-manager'
 
@@ -202,5 +203,58 @@ describe('t-shirt sizing and vote validation', () => {
   it('rejects unknown modes', () => {
     createRoom('Sarah', 'host-u', 'u-h')
     expect(changeMode('u-h', 'bogus' as never)).toBeNull()
+  })
+})
+
+describe('custom decks', () => {
+  it('deals a custom deck to the room and accepts its cards as votes', () => {
+    const { code } = createRoom('Sarah', 'host-cd', 'cd-h')
+    joinRoom(code, 'Tom', 'member-cd', 'cd-m')
+    const state = setCustomDeck('cd-h', [' Short ', 'Tall', 'Grande', 'Venti'])!.roomState
+    expect(state.mode).toBe('custom')
+    expect(state.customDeck).toEqual(['Short', 'Tall', 'Grande', 'Venti'])
+    expect(castVote('cd-m', 3)).not.toBeNull()
+    expect(castVote('cd-m', 5)).toBeNull() // only four cards
+    expect(revealVotes('cd-h')!.roomState.votes).toEqual({ 'member-cd': 3 })
+  })
+
+  it('only lets the host set a deck', () => {
+    const { code } = createRoom('Sarah', 'host-cd2', 'cd2-h')
+    joinRoom(code, 'Tom', 'member-cd2', 'cd2-m')
+    expect(setCustomDeck('cd2-m', ['A', 'B'])).toBeNull()
+  })
+
+  it('rejects decks that break the rules', () => {
+    createRoom('Sarah', 'host-cd3', 'cd3-h')
+    expect(setCustomDeck('cd3-h', ['Only one'])).toBeNull()
+    expect(setCustomDeck('cd3-h', ['A', 'a'])).toBeNull() // duplicate
+    expect(setCustomDeck('cd3-h', ['A', ' '])).toBeNull() // blank
+    expect(setCustomDeck('cd3-h', ['A', 'x'.repeat(13)])).toBeNull()
+    expect(setCustomDeck('cd3-h', ['1', '2', '3', '4', '5', '6', '7', '8', '9'])).toBeNull()
+    expect(setCustomDeck('cd3-h', 'not a list')).toBeNull()
+    expect(setCustomDeck('cd3-h', ['A', 7])).toBeNull()
+    // An emoji counts as one character.
+    expect(setCustomDeck('cd3-h', ['🐭', '🐘'.repeat(12)])).not.toBeNull()
+  })
+
+  it('needs a deck before switching to custom, then keeps it across mode changes', () => {
+    createRoom('Sarah', 'host-cd4', 'cd4-h')
+    expect(changeMode('cd4-h', 'custom')).toBeNull()
+    setCustomDeck('cd4-h', ['🐭', '🐶', '🐘'])
+    changeMode('cd4-h', 'tshirt')
+    const back = changeMode('cd4-h', 'custom')!.roomState
+    expect(back.mode).toBe('custom')
+    expect(back.customDeck).toEqual(['🐭', '🐶', '🐘'])
+  })
+
+  it('a new deck starts a fresh round', () => {
+    const { code } = createRoom('Sarah', 'host-cd5', 'cd5-h')
+    joinRoom(code, 'Tom', 'member-cd5', 'cd5-m')
+    setCustomDeck('cd5-h', ['Yes', 'No'])
+    castVote('cd5-m', 1)
+    revealVotes('cd5-h')
+    const fresh = setCustomDeck('cd5-h', ['Yes', 'No', 'Maybe'])!.roomState
+    expect(fresh.revealed).toBe(false)
+    expect(fresh.participants.every(p => !p.hasVoted)).toBe(true)
   })
 })
